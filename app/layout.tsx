@@ -8,9 +8,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Vantage — Vehicle Damage Inspection",
     description: "AI-assisted vehicle damage inspection with human review.",
-    images: ["/og.png"],
+    images: ["og.png"],
   },
-  twitter: { card: "summary_large_image", images: ["/og.png"] },
+  twitter: { card: "summary_large_image", images: ["og.png"] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

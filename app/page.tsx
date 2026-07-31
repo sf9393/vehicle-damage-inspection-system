@@ -9,6 +9,7 @@ const findings = [
   { label: "Dent", detail: "Rear quarter panel", confidence: "84%", tone: "coral" },
   { label: "Lamp broken", detail: "Right tail lamp", confidence: "96%", tone: "violet" },
 ];
+const publicPath = "/vehicle-damage-inspection-system";
 
 export default function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -31,7 +32,7 @@ export default function Home() {
   }
 
   async function addTestImage() {
-    const response = await fetch("/test-inspection-sample.jpg");
+    const response = await fetch(`${publicPath}/test-inspection-sample.jpg`);
     const blob = await response.blob();
     addFiles([new File([blob], "cardd-validation-sample.jpg", { type: "image/jpeg" })]);
   }
@@ -98,7 +99,7 @@ export default function Home() {
           <span>or browse files · JPG, PNG, WebP · up to 12 images</span>
           <button className="outline" type="button">Select photos</button>
         </div>
-        <div className="test-strip"><div><span className="step">MODEL VALIDATION SAMPLE</span><strong>Want to test the flow first?</strong><p>This included CarDD model-validation image is available for upload and review.</p></div><div><button className="text-button" onClick={addTestImage}>Add test image +</button><a href="/test-inspection-sample.jpg" download>Download JPG ↓</a></div></div>
+        <div className="test-strip"><div><span className="step">MODEL VALIDATION SAMPLE</span><strong>Want to test the flow first?</strong><p>This included CarDD model-validation image is available for upload and review.</p></div><div><button className="text-button" onClick={addTestImage}>Add test image +</button><a href={`${publicPath}/test-inspection-sample.jpg`} download>Download JPG ↓</a></div></div>
 
         {photos.length > 0 && <div className="photo-queue">
           {photos.map((photo) => <article className="photo-card" key={photo.id}>

@@ -22,7 +22,7 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - run: npm ci
-      - run: npm run build
+      - run: env -u GITHUB_ACTIONS -u GITHUB_PAGES npm run build
         env:
           VITE_INFERENCE_API_URL: ${{ vars.INFERENCE_API_URL }}
           NEXT_PUBLIC_SITE_URL: https://sf9393.github.io/vehicle-damage-inspection-system
