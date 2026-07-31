@@ -19,12 +19,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
       - run: npm ci
       - run: npm run build
         env:
           VITE_INFERENCE_API_URL: ${{ vars.INFERENCE_API_URL }}
           NEXT_PUBLIC_SITE_URL: https://sf9393.github.io/vehicle-damage-inspection-system
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: dist/client
       - id: deployment
