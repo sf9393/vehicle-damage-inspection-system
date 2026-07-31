@@ -39,13 +39,49 @@ The dashboard is static and can be hosted on GitHub Pages or Cloudflare Pages. T
 
 ## Project status
 
-Planning phase. See [prd.md](prd.md) for product requirements, architecture, API contract, deployment details, and known limitations.
+MVP implementation in progress. See [prd.md](prd.md) for product requirements, architecture, API contract, deployment details, and known limitations.
+
+## Run locally
+
+### Prerequisites
+
+- Node.js 22+ for the dashboard
+- Python 3.11+ for the inference API
+
+### 1. Start the model API
+
+```bash
+make run-api
+```
+
+The first real inspection downloads the public model weights. The API is then available at `http://localhost:8080`; use `http://localhost:8080/health` to verify it is running.
+
+### 2. Start the dashboard
+
+In a second terminal, configure the dashboard to use the local API and start it:
+
+```bash
+cp .env.example .env.local
+# Set VITE_INFERENCE_API_URL=http://localhost:8080 in .env.local
+npm ci
+npm run dev
+```
+
+Open the local dashboard URL shown in the terminal, upload JPEG, PNG, or WebP vehicle photos, and run an inspection.
+
+### Run checks
+
+```bash
+make test
+```
+
+This creates an isolated Python environment, runs API rule tests, and checks the API source for syntax errors. To install the complete YOLO model runtime before running the API, use `make install-api`.
 
 ## Deployment notes
 
 ### GitHub Pages
 
-Build and publish the frontend's static `dist/` directory using GitHub Actions. Configure the API URL as a build variable and permit the Pages domain in the API's CORS configuration.
+The included [GitHub Pages workflow](.github/workflows/pages.yml) builds and publishes the dashboard on pushes to `main`. In GitHub repository settings, set **Pages → Source** to **GitHub Actions**, then add an `INFERENCE_API_URL` Actions variable containing the public FastAPI service URL. Permit the final Pages domain in the API's `ALLOWED_ORIGINS` setting.
 
 ### Cloudflare Pages
 
