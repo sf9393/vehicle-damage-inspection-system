@@ -30,6 +30,12 @@ export default function Home() {
     if (event.target.files) addFiles(event.target.files);
   }
 
+  async function addTestImage() {
+    const response = await fetch("/test-inspection-sample.jpg");
+    const blob = await response.blob();
+    addFiles([new File([blob], "cardd-validation-sample.jpg", { type: "image/jpeg" })]);
+  }
+
   function drop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragging(false);
@@ -92,6 +98,7 @@ export default function Home() {
           <span>or browse files · JPG, PNG, WebP · up to 12 images</span>
           <button className="outline" type="button">Select photos</button>
         </div>
+        <div className="test-strip"><div><span className="step">MODEL VALIDATION SAMPLE</span><strong>Want to test the flow first?</strong><p>This included CarDD model-validation image is available for upload and review.</p></div><div><button className="text-button" onClick={addTestImage}>Add test image +</button><a href="/test-inspection-sample.jpg" download>Download JPG ↓</a></div></div>
 
         {photos.length > 0 && <div className="photo-queue">
           {photos.map((photo) => <article className="photo-card" key={photo.id}>
@@ -103,6 +110,8 @@ export default function Home() {
 
         <div className="action-row"><span>{photos.length ? `${photos.length} photo${photos.length > 1 ? "s" : ""} queued` : "Add 1–12 photos to begin"}</span><button className="primary" onClick={inspect} disabled={!photos.length || inspecting}>{inspecting ? "Analyzing photos…" : "Run inspection →"}</button></div>
       </section>
+
+      <section className="capture-guide" id="how-it-works"><div className="section-heading"><div><span className="step">PHOTO CAPTURE GUIDE</span><h2>Set the model up for success</h2></div><p>Clear, consistent photos make visible damage easier to review.</p></div><div className="guide-grid"><article><span>01</span><h3>Walk the perimeter</h3><p>Photograph each corner, side, front, and rear. Keep panels fully in frame.</p></article><article><span>02</span><h3>Move closer</h3><p>Add a close-up for every suspected mark, dent, crack, lamp, or tire issue.</p></article><article><span>03</span><h3>Use even light</h3><p>Prefer daylight or bright shade. Avoid glare, heavy shadow, and wet surfaces.</p></article><article><span>04</span><h3>Keep it sharp</h3><p>Hold steady, clean the lens, and retake blurred images before inspection.</p></article></div></section>
 
       <section className="report" id="report">
         <div className="section-heading"><div><span className="step">02 / REVIEW REPORT</span><h2>Findings, made legible</h2></div><p>Example review state. AI findings must be accepted or dismissed by an inspector.</p></div>

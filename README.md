@@ -2,6 +2,8 @@
 
 An open-source, AI-assisted web application for reviewing vehicle photos and identifying visible exterior damage. It is designed as a human-in-the-loop inspection aid for rental fleets, body shops, insurers, and vehicle operators.
 
+**[View the live demo →](https://sf9393.github.io/vehicle-damage-inspection-system/)**
+
 The initial model is a YOLOv8 segmentation model trained on the CarDD dataset. It can identify dents, scratches, cracks, shattered glass, broken lamps, and flat tires.
 
 > **Important:** This application is an inspection assistant—not a certified repair estimate, claims decision system, or vehicle safety inspection. A qualified person must validate every result.
