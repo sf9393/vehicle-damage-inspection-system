@@ -5,9 +5,36 @@ import { ChangeEvent, DragEvent, useRef, useState } from "react";
 type Photo = { id: string; name: string; url: string; file: File; state: "ready" | "analyzing" | "done" | "error" };
 
 const findings = [
-  { label: "Scratch", detail: "Front-left door", confidence: "91%", tone: "amber" },
-  { label: "Dent", detail: "Rear quarter panel", confidence: "84%", tone: "coral" },
-  { label: "Lamp broken", detail: "Right tail lamp", confidence: "96%", tone: "violet" },
+  {
+    label: "Scratch", detail: "Front-left door", confidence: "91%", tone: "amber",
+    evidence: [
+      ["Strong visual evidence", "A clear linear surface mark is visible on the front-left door."],
+      ["Shape match", "The damage pattern closely matches scratches in the model's training examples."],
+      ["Location certainty", "The affected panel is clearly identified as the front-left door."],
+      ["Image quality", "The damaged area is well-lit and mostly unobstructed."],
+    ],
+    uncertainty: "Reflections and glare could partially resemble surface damage, preventing higher confidence.",
+  },
+  {
+    label: "Dent", detail: "Rear quarter panel", confidence: "84%", tone: "coral",
+    evidence: [
+      ["Strong visual evidence", "A localized contour change interrupts the otherwise smooth rear quarter panel."],
+      ["Shape match", "The rounded deformation aligns with dent patterns the model has learned."],
+      ["Location certainty", "Panel edges and the wheel arch clearly place the finding on the rear quarter."],
+      ["Image quality", "The panel is visible at a useful angle, though the surface reflection is uneven."],
+    ],
+    uncertainty: "The apparent depth is difficult to confirm from one image, so the confidence remains below a high-certainty result.",
+  },
+  {
+    label: "Lamp broken", detail: "Right tail lamp", confidence: "96%", tone: "violet",
+    evidence: [
+      ["Strong visual evidence", "The right tail lamp has a clearly irregular, damaged-looking lens area."],
+      ["Shape match", "The visible break pattern strongly matches broken-lamp examples in the training data."],
+      ["Location certainty", "The lamp housing is clearly visible at the vehicle's right rear corner."],
+      ["Image quality", "High contrast around the lens makes the affected area easy to distinguish."],
+    ],
+    uncertainty: "Small portions of the lens are obscured by reflections, so a close-up should still confirm the finding.",
+  },
 ];
 const publicPath = "/vehicle-damage-inspection-system";
 
@@ -15,6 +42,7 @@ export default function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [dragging, setDragging] = useState(false);
   const [inspecting, setInspecting] = useState(false);
+  const [expandedFinding, setExpandedFinding] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   function addFiles(files: FileList | File[]) {
@@ -118,7 +146,17 @@ export default function Home() {
         <div className="section-heading"><div><span className="step">02 / REVIEW REPORT</span><h2>Findings, made legible</h2></div><p>Example review state. AI findings must be accepted or dismissed by an inspector.</p></div>
         <div className="report-grid">
           <div className="preview-panel"><div className="car-stage"><div className="car-shape">VEHICLE<br />IMAGE</div><span className="hotspot h1">01</span><span className="hotspot h2">02</span><span className="hotspot h3">03</span></div><div className="legend"><span><b className="amber" /> Cosmetic</span><span><b className="coral" /> Repair</span><span><b className="violet" /> Safety review</span></div></div>
-          <div className="findings"><div className="finding-header"><span>3 visible findings</span><strong>Review status <b>Pending</b></strong></div>{findings.map((finding, index) => <article className="finding" key={finding.label}><span className={`index ${finding.tone}`}>0{index + 1}</span><div><strong>{finding.label}</strong><p>{finding.detail}</p></div><span className="confidence">{finding.confidence}<small>confidence</small></span><button aria-label={`Review ${finding.label}`}>→</button></article>)}<div className="notice">Estimates are indicative. Validate all findings before repair or claims decisions.</div></div>
+          <div className="findings"><div className="finding-header"><span>3 visible findings</span><strong>Review status <b>Pending</b></strong></div>{findings.map((finding, index) => {
+            const isExpanded = expandedFinding === finding.label;
+            const explanationId = `confidence-${finding.label.toLowerCase().replaceAll(" ", "-")}`;
+            const toggle = () => setExpandedFinding((current) => current === finding.label ? null : finding.label);
+            return <article className={`finding ${isExpanded ? "expanded" : ""}`} key={finding.label}>
+              <span className={`index ${finding.tone}`}>0{index + 1}</span><div><strong>{finding.label}</strong><p>{finding.detail}</p></div>
+              <button className="confidence" onClick={toggle} aria-expanded={isExpanded} aria-controls={explanationId}>{finding.confidence}<small>confidence</small></button>
+              <button className="finding-toggle" onClick={toggle} aria-label={`${isExpanded ? "Hide" : "Show"} confidence explanation for ${finding.label}`} aria-expanded={isExpanded} aria-controls={explanationId}>{isExpanded ? "×" : "→"}</button>
+              {isExpanded && <section className="confidence-explanation" id={explanationId}><h3>Why {finding.confidence}?</h3><p>The model assigned {finding.confidence} confidence because:</p><ul>{finding.evidence.map(([title, detail]) => <li key={title}><strong>{title}:</strong> {detail}</li>)}</ul><p className="uncertainty"><strong>Remaining uncertainty:</strong> {finding.uncertainty}</p></section>}
+            </article>;
+          })}<div className="notice">Estimates are indicative. Validate all findings before repair or claims decisions.</div></div>
         </div>
       </section>
 
