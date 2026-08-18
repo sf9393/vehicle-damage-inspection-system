@@ -40,21 +40,28 @@ export default defineConfig(async () => {
   process.env.WRANGLER_LOG_PATH ??= ".wrangler/logs";
   process.env.MINIFLARE_REGISTRY_PATH ??= ".wrangler/registry";
 
-  // Wrangler snapshots its log path while the Cloudflare plugin is imported.
-  const { cloudflare } = await import("@cloudflare/vite-plugin");
+  // Older macOS versions cannot run the local Cloudflare workerd binary. A
+  // regular Vite preview still exercises the dashboard; production builds keep
+  // the Cloudflare plugin and Worker-compatible output.
+  const localPreview = process.env.VANTAGE_LOCAL_PREVIEW === "1";
+  const cloudflarePlugin = localPreview
+    ? null
+    : (await import("@cloudflare/vite-plugin")).cloudflare({
+        viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
+        config: localBindingConfig,
+      });
 
   return {
-    base: "/vehicle-damage-inspection-system/",
+    // Pages is served from the repository subpath in production; local Vite
+    // preview is served from the root.
+    base: localPreview ? "/" : "/vehicle-damage-inspection-system/",
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     plugins: [
       vinext(),
       sites(),
-      cloudflare({
-        viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        config: localBindingConfig,
-      }),
+      ...(cloudflarePlugin ? [cloudflarePlugin] : []),
     ],
   };
 });
