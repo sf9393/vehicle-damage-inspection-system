@@ -15,6 +15,8 @@ export default function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [dragging, setDragging] = useState(false);
   const [inspecting, setInspecting] = useState(false);
+  const [demoReady, setDemoReady] = useState(false);
+  const [reviewed, setReviewed] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null);
 
   function addFiles(files: FileList | File[]) {
@@ -37,6 +39,21 @@ export default function Home() {
     addFiles([new File([blob], "cardd-validation-sample.jpg", { type: "image/jpeg" })]);
   }
 
+  async function launchDemo() {
+    setInspecting(true);
+    setDemoReady(false);
+    const response = await fetch(`${publicPath}/test-inspection-sample.jpg`);
+    const blob = await response.blob();
+    const file = new File([blob], "vantage-demo-damage.jpg", { type: "image/jpeg" });
+    setPhotos([{ id: `demo-${Date.now()}`, name: file.name, url: URL.createObjectURL(file), file, state: "analyzing" }]);
+    window.setTimeout(() => {
+      setPhotos((current) => current.map((photo) => ({ ...photo, state: "done" })));
+      setDemoReady(true);
+      setInspecting(false);
+      document.querySelector("#report")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 1150);
+  }
+
   function drop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragging(false);
@@ -49,8 +66,12 @@ export default function Home() {
     setPhotos((current) => current.map((photo) => ({ ...photo, state: "analyzing" })));
     const apiUrl = process.env.NEXT_PUBLIC_INFERENCE_API_URL || process.env.VITE_INFERENCE_API_URL;
     if (!apiUrl) {
-      setPhotos((current) => current.map((photo) => ({ ...photo, state: "error" })));
-      setInspecting(false);
+      window.setTimeout(() => {
+        setPhotos((current) => current.map((photo) => ({ ...photo, state: "done" })));
+        setDemoReady(true);
+        setInspecting(false);
+        document.querySelector("#report")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 1150);
       return;
     }
     try {
@@ -59,11 +80,28 @@ export default function Home() {
       const response = await fetch(`${apiUrl.replace(/\/$/, "")}/v1/inspections/analyze`, { method: "POST", body: formData });
       if (!response.ok) throw new Error("Inspection request failed");
       setPhotos((current) => current.map((photo) => ({ ...photo, state: "done" })));
+      setDemoReady(true);
     } catch {
       setPhotos((current) => current.map((photo) => ({ ...photo, state: "error" })));
     } finally {
       setInspecting(false);
     }
+  }
+
+  function downloadReport() {
+    const payload = {
+      report: "Vantage vehicle inspection demo",
+      generated_at: new Date().toISOString(),
+      review_status: reviewed.length === findings.length ? "reviewed" : "pending human review",
+      findings: findings.map((finding) => ({ ...finding, reviewed: reviewed.includes(finding.label) })),
+      notice: "Demo output only — validate every finding before a repair or claims decision.",
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "vantage-demo-inspection-report.json";
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -79,6 +117,7 @@ export default function Home() {
         <h1>Inspect with confidence.<br /><em>Move faster.</em></h1>
         <p>Turn walkaround photos into an organized, human-reviewable damage report in minutes.</p>
         <div className="hero-meta"><span>YOLOv8 SEGMENTATION</span><i /> <span>HUMAN REVIEW REQUIRED</span></div>
+        <button className="demo-cta" onClick={launchDemo} disabled={inspecting}>{inspecting ? "Preparing demo…" : "Try the live demo →"}</button>
       </section>
 
       <section className="workspace" id="inspection">
@@ -110,6 +149,7 @@ export default function Home() {
         </div>}
 
         <div className="action-row"><span>{photos.length ? `${photos.length} photo${photos.length > 1 ? "s" : ""} queued` : "Add 1–12 photos to begin"}</span><button className="primary" onClick={inspect} disabled={!photos.length || inspecting}>{inspecting ? "Analyzing photos…" : "Run inspection →"}</button></div>
+        {demoReady && <div className="demo-notice"><span>DEMO MODE</span> Results below are a deterministic walkthrough, not a live damage assessment.</div>}
       </section>
 
       <section className="capture-guide" id="how-it-works"><div className="section-heading"><div><span className="step">PHOTO CAPTURE GUIDE</span><h2>Set the model up for success</h2></div><p>Clear, consistent photos make visible damage easier to review.</p></div><div className="guide-grid"><article><span>01</span><h3>Walk the perimeter</h3><p>Photograph each corner, side, front, and rear. Keep panels fully in frame.</p></article><article><span>02</span><h3>Move closer</h3><p>Add a close-up for every suspected mark, dent, crack, lamp, or tire issue.</p></article><article><span>03</span><h3>Use even light</h3><p>Prefer daylight or bright shade. Avoid glare, heavy shadow, and wet surfaces.</p></article><article><span>04</span><h3>Keep it sharp</h3><p>Hold steady, clean the lens, and retake blurred images before inspection.</p></article></div></section>
@@ -118,7 +158,7 @@ export default function Home() {
         <div className="section-heading"><div><span className="step">02 / REVIEW REPORT</span><h2>Findings, made legible</h2></div><p>Example review state. AI findings must be accepted or dismissed by an inspector.</p></div>
         <div className="report-grid">
           <div className="preview-panel"><div className="car-stage"><div className="car-shape">VEHICLE<br />IMAGE</div><span className="hotspot h1">01</span><span className="hotspot h2">02</span><span className="hotspot h3">03</span></div><div className="legend"><span><b className="amber" /> Cosmetic</span><span><b className="coral" /> Repair</span><span><b className="violet" /> Safety review</span></div></div>
-          <div className="findings"><div className="finding-header"><span>3 visible findings</span><strong>Review status <b>Pending</b></strong></div>{findings.map((finding, index) => <article className="finding" key={finding.label}><span className={`index ${finding.tone}`}>0{index + 1}</span><div><strong>{finding.label}</strong><p>{finding.detail}</p></div><span className="confidence">{finding.confidence}<small>confidence</small></span><button aria-label={`Review ${finding.label}`}>→</button></article>)}<div className="notice">Estimates are indicative. Validate all findings before repair or claims decisions.</div></div>
+          <div className="findings"><div className="finding-header"><span>{demoReady ? "3 demo findings" : "3 visible findings"}</span><strong>Review status <b>{reviewed.length === findings.length ? "Complete" : `${reviewed.length}/3 reviewed`}</b></strong></div>{findings.map((finding, index) => <article className={`finding ${reviewed.includes(finding.label) ? "reviewed" : ""}`} key={finding.label}><span className={`index ${finding.tone}`}>0{index + 1}</span><div><strong>{finding.label}</strong><p>{finding.detail}</p></div><span className="confidence">{finding.confidence}<small>confidence</small></span><button onClick={() => setReviewed((current) => current.includes(finding.label) ? current.filter((item) => item !== finding.label) : [...current, finding.label])} aria-label={`Review ${finding.label}`}>{reviewed.includes(finding.label) ? "✓" : "→"}</button></article>)}<div className="report-actions"><button className="outline" onClick={downloadReport}>Download demo report ↓</button><span>Review each finding before export.</span></div><div className="notice">Estimates are indicative. Validate all findings before repair or claims decisions.</div></div>
         </div>
       </section>
 
